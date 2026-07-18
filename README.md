@@ -40,7 +40,7 @@ inputs.beef-flake.url = "github:Jonathan-Racaud/Beef-flake";
 ```nix
 # NixOS (configuration.nix or a module)
 environment.systemPackages = [
-  inputs.beef-flake.packages."${stdenv.hostPlatform.system}"".default
+  inputs.beef-flake.packages."${stdenv.hostPlatform.system}".default
 ];
 
 # Home Manager
