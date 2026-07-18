@@ -62,6 +62,8 @@
         compilerDeps = with pkgs; [
           llvmPkgs.llvm.dev
           llvmPkgs.llvm.lib
+          llvmPkgs.lldb.dev
+          llvmPkgs.lldb
           libffi
           zlib
           libxml2
@@ -140,6 +142,8 @@
                 -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
                 -DCMAKE_BUILD_TYPE=RelWithDebInfo \
                 -DLLVM_DIR="$LLVM_DIR" \
+                -DLLDB_INCLUDE_DIR=${llvmPkgs.lldb.dev}/include \
+                -DLLDB_LIBRARY=${llvmPkgs.lldb}/lib/liblldb.so \
                 -DBF_ENABLE_SDL=1 \
                 -DBUILD_IMGCREATE=1 \
                 ..
@@ -250,30 +254,36 @@
               --prefix LD_LIBRARY_PATH : "$libpath"
             makeWrapper $share/bin/BeefBuild $out/bin/beef \
               --prefix LD_LIBRARY_PATH : "$libpath"
-
             # BeefIDE writes DefaultLayout.toml relative to its own binary
-            # (mInstallDir = dirname(/proc/self/exe)), so it must run from a
-            # user-writable directory. This launcher copies $share/bin/ to
-            # ~/.local/share/beef/bin/ on first run or after an upgrade, then
-            # execs the copy so /proc/self/exe points to the writable location.
-            cat > $share/bin/beef-ide-launcher << 'LAUNCHER'
-#!/usr/bin/env bash
+            # (/proc/self/exe resolves symlinks, so only the binary itself must
+            # be a real copy in a user-writable dir; everything else symlinks).
+            cat > $share/bin/beef-ide-launcher << LAUNCHER_SCRIPT
+#!${pkgs.bash}/bin/bash
 set -euo pipefail
-STORE_BIN="$(dirname "$(readlink -f "''${BASH_SOURCE[0]}")")"
-USER_BEEF_DIR="''${XDG_DATA_HOME:-$HOME/.local/share}/beef/bin"
-VERSION_FILE="$USER_BEEF_DIR/.store-path"
-if [ ! -f "$VERSION_FILE" ] || [ "$(cat "$VERSION_FILE")" != "$STORE_BIN" ]; then
-    mkdir -p "$USER_BEEF_DIR"
-    cp -rL "$STORE_BIN"/. "$USER_BEEF_DIR/"
-    chmod -R u+w "$USER_BEEF_DIR"
-    echo "$STORE_BIN" > "$VERSION_FILE"
+STORE_BIN="$share/bin"
+BEEFLIBS="$share/BeefLibs"
+USER_BEEF_DIR="\''${XDG_DATA_HOME:-\$HOME/.local/share}/beef"
+VERSION_FILE="\$USER_BEEF_DIR/bin/.store-path"
+if [ ! -f "\$VERSION_FILE" ] || [ "\$(cat "\$VERSION_FILE")" != "\$STORE_BIN" ]; then
+    mkdir -p "\$USER_BEEF_DIR/bin"
+    cp "\$STORE_BIN/BeefIDE" "\$USER_BEEF_DIR/bin/BeefIDE"
+    chmod u+w "\$USER_BEEF_DIR/bin/BeefIDE"
+    for f in "\$STORE_BIN"/*; do
+        name="\$(basename "\$f")"
+        [ "\$name" = "BeefIDE" ] && continue
+        ln -sf "\$f" "\$USER_BEEF_DIR/bin/\$name"
+    done
+    ln -sfn "\$BEEFLIBS" "\$USER_BEEF_DIR/BeefLibs"
+    echo "\$STORE_BIN" > "\$VERSION_FILE"
 fi
-exec "$USER_BEEF_DIR/BeefIDE" "$@"
-LAUNCHER
+exec "\$USER_BEEF_DIR/bin/BeefIDE" "\$@"
+LAUNCHER_SCRIPT
             chmod +x $share/bin/beef-ide-launcher
 
             makeWrapper $share/bin/beef-ide-launcher $out/bin/beef-ide \
-              --prefix LD_LIBRARY_PATH : "$libpath"
+              --prefix LD_LIBRARY_PATH : "$libpath" \
+              --prefix PATH : "${pkgs.gdb}/bin" \
+              --prefix PATH : "${llvmPkgs.lldb}/bin"
 
             runHook postInstall
           '';
