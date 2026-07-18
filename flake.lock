@@ -3,14 +3,18 @@
     "beef-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1783434715,
-        "narHash": "sha256-rZJYM2YxgfwgFiqn/GKLb7c6z7TeBpsciPXa3ZWu7aw=",
-        "path": "/home/vendinois/Projects/Beef/Beef",
-        "type": "path"
+        "lastModified": 1784218659,
+        "narHash": "sha256-wFLmpAhm5N7BlU+dZaA4v4XbsUjWPzOkPFsPBQX372k=",
+        "owner": "beefytech",
+        "repo": "Beef",
+        "rev": "7b1f9a3ef6fa7d6a78f4924c9312258973839fca",
+        "type": "github"
       },
       "original": {
-        "path": "/home/vendinois/Projects/Beef/Beef",
-        "type": "path"
+        "owner": "beefytech",
+        "repo": "Beef",
+        "rev": "7b1f9a3ef6fa7d6a78f4924c9312258973839fca",
+        "type": "github"
       }
     },
     "flake-utils": {

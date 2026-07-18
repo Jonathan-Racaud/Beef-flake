@@ -4,8 +4,15 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
+    
+    #beef-src = {
+    #  url = "path:/home/vendinois/Projects/Beef/Beef";
+    #  flake = false;
+    #};
+
+    
     beef-src = {
-      url = "path:/home/vendinois/Projects/Beef/Beef";
+      url = "github:beefytech/Beef/7b1f9a3ef6fa7d6a78f4924c9312258973839fca";
       flake = false;
     };
   };
@@ -130,6 +137,7 @@
             (
               cd jbuild
               cmake -GNinja \
+                -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
                 -DCMAKE_BUILD_TYPE=RelWithDebInfo \
                 -DLLVM_DIR="$LLVM_DIR" \
                 -DBF_ENABLE_SDL=1 \
@@ -155,6 +163,10 @@
             fi
 
             LINKOPTS="-ldl -lpthread -Wl,-rpath -Wl,\$ORIGIN"
+
+            # Beef tries to create ~/.config/beeflang/BeefManaged; the Nix
+            # sandbox sets HOME=/homeless-shelter which is not writable.
+            export HOME=$TMPDIR
 
             # 4. Bootstrap BeefBuild via BeefBoot.
             echo "Building BeefBuild_boot..."
@@ -238,7 +250,29 @@
               --prefix LD_LIBRARY_PATH : "$libpath"
             makeWrapper $share/bin/BeefBuild $out/bin/beef \
               --prefix LD_LIBRARY_PATH : "$libpath"
-            makeWrapper $share/bin/BeefIDE   $out/bin/beef-ide \
+
+            # BeefIDE writes DefaultLayout.toml relative to its own binary
+            # (mInstallDir = dirname(/proc/self/exe)), so it must run from a
+            # user-writable directory. This launcher copies $share/bin/ to
+            # ~/.local/share/beef/bin/ on first run or after an upgrade, then
+            # execs the copy so /proc/self/exe points to the writable location.
+            cat > $share/bin/beef-ide-launcher << 'LAUNCHER'
+#!/usr/bin/env bash
+set -euo pipefail
+STORE_BIN="$(dirname "$(readlink -f "''${BASH_SOURCE[0]}")")"
+USER_BEEF_DIR="''${XDG_DATA_HOME:-$HOME/.local/share}/beef/bin"
+VERSION_FILE="$USER_BEEF_DIR/.store-path"
+if [ ! -f "$VERSION_FILE" ] || [ "$(cat "$VERSION_FILE")" != "$STORE_BIN" ]; then
+    mkdir -p "$USER_BEEF_DIR"
+    cp -rL "$STORE_BIN"/. "$USER_BEEF_DIR/"
+    chmod -R u+w "$USER_BEEF_DIR"
+    echo "$STORE_BIN" > "$VERSION_FILE"
+fi
+exec "$USER_BEEF_DIR/BeefIDE" "$@"
+LAUNCHER
+            chmod +x $share/bin/beef-ide-launcher
+
+            makeWrapper $share/bin/beef-ide-launcher $out/bin/beef-ide \
               --prefix LD_LIBRARY_PATH : "$libpath"
 
             runHook postInstall
