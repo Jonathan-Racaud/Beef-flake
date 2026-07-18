@@ -8,12 +8,12 @@ Beef does not have an official NixOS package. This flake compiles Beef from sour
 
 | Output | Description |
 |---|---|
-| `packages.beef` | The full Beef toolchain: `beef` (alias for BeefBuild), `beef-ide` (BeefIDE launcher), and `BeefBuild` |
-| `apps.beef` | Run `BeefBuild` directly via `nix run` |
-| `apps.beef-ide` | Launch BeefIDE via `nix run` |
+| `packages.beef` | The full Beef toolchain: `BeefBuild` and `BeefIDE` |
+| `apps.BeefBuild` | Run `BeefBuild` directly via `nix run` |
+| `apps.BeefIDE` | Launch BeefIDE via `nix run` |
 | `devShells.default` | A development shell for hacking on the flake itself (includes GDB and clang-tools) |
 
-Supported systems: `x86_64-linux`, `aarch64-linux`.
+Supported systems: `x86_64-linux`.
 
 ## Installation
 
@@ -21,10 +21,10 @@ Supported systems: `x86_64-linux`, `aarch64-linux`.
 
 ```sh
 # Launch BeefIDE
-nix run github:jonathanracaud/Beef-flake#beef-ide
+nix run github:jonathanracaud/Beef-flake#BeefIDE
 
 # Run BeefBuild
-nix run github:jonathanracaud/Beef-flake#beef
+nix run github:jonathanracaud/Beef-flake#BeefBuild
 ```
 
 ### NixOS / Home Manager — add to your flake
@@ -53,9 +53,8 @@ home.packages = [
 
 | Command | Description |
 |---|---|
-| `beef` | Alias for `BeefBuild` — build Beef projects from the CLI |
 | `BeefBuild` | The Beef build system |
-| `beef-ide` | Launches BeefIDE (copies runtime files to `~/.local/share/beef/bin/` on first run) |
+| `BeefIDE` | Launches BeefIDE (copies runtime files to `~/.local/share/beef/bin/` on first run) |
 
 ## Contributing
 

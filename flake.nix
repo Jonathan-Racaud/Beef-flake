@@ -18,7 +18,7 @@
   };
 
   outputs = { self, nixpkgs, flake-utils, beef-src }:
-    flake-utils.lib.eachSystem [ "x86_64-linux" "aarch64-linux" ] (system:
+    flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
       let
         pkgs = import nixpkgs { inherit system; };
         lib = pkgs.lib;
@@ -252,8 +252,6 @@
             libpath="${lib.makeLibraryPath ideRuntimeDeps}"
             makeWrapper $share/bin/BeefBuild $out/bin/BeefBuild \
               --prefix LD_LIBRARY_PATH : "$libpath"
-            makeWrapper $share/bin/BeefBuild $out/bin/beef \
-              --prefix LD_LIBRARY_PATH : "$libpath"
             # BeefIDE writes DefaultLayout.toml relative to its own binary
             # (/proc/self/exe resolves symlinks, so only the binary itself must
             # be a real copy in a user-writable dir; everything else symlinks).
@@ -280,7 +278,7 @@ exec "\$USER_BEEF_DIR/bin/BeefIDE" "\$@"
 LAUNCHER_SCRIPT
             chmod +x $share/bin/beef-ide-launcher
 
-            makeWrapper $share/bin/beef-ide-launcher $out/bin/beef-ide \
+            makeWrapper $share/bin/beef-ide-launcher $out/bin/BeefIDE \
               --prefix LD_LIBRARY_PATH : "$libpath" \
               --prefix PATH : "${pkgs.gdb}/bin" \
               --prefix PATH : "${llvmPkgs.lldb}/bin"
@@ -292,8 +290,8 @@ LAUNCHER_SCRIPT
             description = "Beef programming language and IDE";
             homepage = "https://www.beeflang.org/";
             license = licenses.mit;
-            platforms = [ "x86_64-linux" "aarch64-linux" ];
-            mainProgram = "beef";
+            platforms = [ "x86_64-linux" ];
+            mainProgram = "BeefIDE";
           };
         };
       in {
@@ -305,15 +303,15 @@ LAUNCHER_SCRIPT
         apps = {
           default = {
             type = "app";
-            program = "${beef}/bin/beef-ide";
+            program = "${beef}/bin/BeefIDE";
           };
-          beef = {
+          BeefBuild = {
             type = "app";
-            program = "${beef}/bin/beef";
+            program = "${beef}/bin/BeefBuild";
           };
-          beef-ide = {
+          BeefIDE = {
             type = "app";
-            program = "${beef}/bin/beef-ide";
+            program = "${beef}/bin/BeefIDE";
           };
         };
 
