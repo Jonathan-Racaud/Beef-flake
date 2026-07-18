@@ -32,7 +32,7 @@ nix run github:jonathanracaud/Beef-flake#BeefBuild
 1. Add the input to your `flake.nix`:
 
 ```nix
-inputs.beef-flake.url = "github:jonathanracaud/Beef-flake";
+inputs.beef-flake.url = "github:Jonathan-Racaud/Beef-flake";
 ```
 
 2. Add the package to your system or home packages:
@@ -40,12 +40,12 @@ inputs.beef-flake.url = "github:jonathanracaud/Beef-flake";
 ```nix
 # NixOS (configuration.nix or a module)
 environment.systemPackages = [
-  inputs.beef-flake.packages.${system}.beef
+  inputs.beef-flake.packages."${stdenv.hostPlatform.system}"".default
 ];
 
 # Home Manager
 home.packages = [
-  inputs.beef-flake.packages.${system}.beef
+  inputs.beef-flake.packages."${stdenv.hostPlatform.system}".default
 ];
 ```
 
