@@ -70,6 +70,21 @@
           ncurses
         ];
 
+        # Desktop entry for the app launcher. Upstream ships
+        # IDE/Resources/BeefIDE.desktop but it targets the /opt/BeefLang
+        # layout (Exec=beefide, Path=/opt/BeefLang/bin) and nothing installs
+        # it, so we generate our own entry pointing at the installed wrapper.
+        desktopItem = pkgs.makeDesktopItem {
+          name = "BeefIDE";
+          desktopName = "Beef IDE";
+          comment = "IDE for the Beef programming language";
+          exec = "BeefIDE";
+          icon = "beeflang";
+          categories = [ "Development" "IDE" ];
+          terminal = false;
+          startupWMClass = "BeefIDE";
+        };
+
         beef = pkgs.stdenv.mkDerivation {
           pname = "beef";
           version = "unstable-${builtins.substring 0 7 (beef-src.rev or "unknown")}";
@@ -282,6 +297,14 @@ LAUNCHER_SCRIPT
               --prefix LD_LIBRARY_PATH : "$libpath" \
               --prefix PATH : "${pkgs.gdb}/bin" \
               --prefix PATH : "${llvmPkgs.lldb}/bin"
+
+            # Desktop entry + icon so the IDE shows up in the app launcher
+            # (picked up automatically via environment.systemPackages /
+            # home.packages, which merge share/applications and share/icons).
+            install -Dm644 ${desktopItem}/share/applications/BeefIDE.desktop \
+              $out/share/applications/BeefIDE.desktop
+            install -Dm644 $src/IDE/Resources/beeflang.png \
+              $out/share/icons/hicolor/128x128/apps/beeflang.png
 
             runHook postInstall
           '';

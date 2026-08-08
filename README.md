@@ -56,6 +56,15 @@ home.packages = [
 | `BeefBuild` | The Beef build system |
 | `BeefIDE` | Launches BeefIDE (copies runtime files to `~/.local/share/beef/bin/` on first run) |
 
+### Desktop entry
+
+Installing the package also registers a launcher: **Beef IDE** appears in your application menu (GNOME Shell, KDE, etc.), with no extra configuration. The package ships:
+
+- `share/applications/BeefIDE.desktop` — starts the same `BeefIDE` wrapper as the command above
+- `share/icons/hicolor/128x128/apps/beeflang.png` — the app icon
+
+Note: upstream Beef contains an `IDE/Resources/BeefIDE.desktop` file, but it targets the classic `/opt/BeefLang` layout (`Exec=beefide`, `Path=/opt/BeefLang/bin`) and is not installed by any of Beef's own scripts, so this flake generates its own entry pointing at the installed wrapper.
+
 ## Contributing
 
 Contributions are welcome. Please keep the following rules in mind:
