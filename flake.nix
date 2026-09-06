@@ -7,8 +7,20 @@
     
     beef-src = {
       url = "github:beefytech/Beef/7b1f9a3ef6fa7d6a78f4924c9312258973839fca";
+      
+      # Use an absolute path to your own fork of Beef if you want to use this flake to build it.
+      # url = "path:/path/to/the/forked/Beef";
       flake = false;
     };
+
+    # If you want to use this flake to build a fork of the Beef project
+    # comment the above `beef-src` and uncomment the one below.
+    # Replace the path by the actual path to your fork
+
+    #beef-src = {
+    #  
+    #  flake = false;
+    #};
   };
 
   outputs = { self, nixpkgs, flake-utils, beef-src }:
@@ -340,7 +352,8 @@ LAUNCHER_SCRIPT
           ];
           shellHook = ''
             export LLVM_DIR=${llvmPkgs.llvm.dev}/lib/cmake/llvm
-            echo "Beef dev shell ready. Run: ./Beef/bin/build.sh ide"
+            echo "Beef dev shell ready (flake packaging)."
+            echo "Build: nix build .#beef   |   Run IDE: nix run .#BeefIDE"
           '';
         };
       });

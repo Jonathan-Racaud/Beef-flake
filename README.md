@@ -86,6 +86,10 @@ beef-src = {
 3. Run `nix flake update` to refresh `flake.lock`.
 4. Verify the build: `nix build`.
 
+### Working on your own fork of Beef
+
+If you want to use this flake to build your own fork of the Beef project, simply point the `url` of the input `beef-src` attribute set to the folder containing your forked Beef repo. The flake should be able to build it granted the build process between your fork and the official commit this flake targets are the same.
+
 ### What belongs here — and what does not
 
 This flake only touches the **build and packaging layer**. It must never patch Beef's source code. Acceptable changes include:
@@ -99,10 +103,12 @@ This flake only touches the **build and packaging layer**. It must never patch B
 
 Changes that modify Beef's own source logic, algorithms, or language semantics do not belong here. Open a PR on [`beefytech/Beef`](https://github.com/beefytech/Beef) instead.
 
+Only official Beef nightly releases or stable release will be accepted in this flake. Personal forks will not.
+
 ### Development shell
 
 ```sh
 nix develop
 ```
 
-This drops you into a shell with CMake, Ninja, LLVM, GDB, and clang-tools available and `LLVM_DIR` pre-set.
+This drops you into a shell with CMake, Ninja, LLVM, GDB, and clang-tools available and `LLVM_DIR` pre-set that is meant to iterate on this flake. Using this flake as a development environment for the Beef project is out of the scope of this flake.
