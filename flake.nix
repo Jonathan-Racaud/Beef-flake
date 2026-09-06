@@ -5,12 +5,6 @@
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
     
-    #beef-src = {
-    #  url = "path:/home/vendinois/Projects/Beef/Beef";
-    #  flake = false;
-    #};
-
-    
     beef-src = {
       url = "github:beefytech/Beef/7b1f9a3ef6fa7d6a78f4924c9312258973839fca";
       flake = false;

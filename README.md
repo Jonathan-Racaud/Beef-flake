@@ -21,10 +21,10 @@ Supported systems: `x86_64-linux`.
 
 ```sh
 # Launch BeefIDE
-nix run github:jonathanracaud/Beef-flake#BeefIDE
+nix run github:Jonathan-Racaud/Beef-flake#BeefIDE
 
 # Run BeefBuild
-nix run github:jonathanracaud/Beef-flake#BeefBuild
+nix run github:Jonathan-Racaud/Beef-flake#BeefBuild
 ```
 
 ### NixOS / Home Manager — add to your flake
@@ -39,12 +39,12 @@ inputs.beef-flake.url = "github:Jonathan-Racaud/Beef-flake";
 
 ```nix
 # NixOS (configuration.nix or a module)
-environment.systemPackages = [
+environment.systemPackages = with pkgs; [
   inputs.beef-flake.packages."${stdenv.hostPlatform.system}".default
 ];
 
 # Home Manager
-home.packages = [
+home.packages = with pkgs; [
   inputs.beef-flake.packages."${stdenv.hostPlatform.system}".default
 ];
 ```
