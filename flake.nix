@@ -6,7 +6,7 @@
     flake-utils.url = "github:numtide/flake-utils";
     
     beef-src = {
-      url = "github:beefytech/Beef/7b1f9a3ef6fa7d6a78f4924c9312258973839fca";
+      url = "github:beefytech/Beef/1cd7cf8687d86c447872c32fdf8c7a2ea7b699f1";
       
       # Use an absolute path to your own fork of Beef if you want to use this flake to build it.
       # url = "path:/path/to/the/forked/Beef";
@@ -116,30 +116,7 @@
           '';
 
           postPatch = ''
-            patchShebangs bin BeefySysLib/third_party/libffi || true
-            # Relax LLVM version pin if nixpkgs ships a different 22.x minor.
-            if [ -f CMakeLists.txt ]; then
-              substituteInPlace CMakeLists.txt \
-                --replace-quiet 'find_package(LLVM 22.1' 'find_package(LLVM 22'
-            fi
-
-            # The pinned Beef commit doesn't wire BeefTools/ImgCreate into the
-            # top-level CMakeLists.txt, so -DBUILD_IMGCREATE is silently ignored.
-            # Add it ourselves; the subproject's own CMakeLists exists.
-            if ! grep -q 'BeefTools/ImgCreate' CMakeLists.txt; then
-              printf '\nadd_subdirectory(BeefTools/ImgCreate)\n' >> CMakeLists.txt
-            fi
-
-            # BeefBoot spawns a system C++ compiler to link BeefBuild_boot.
-            # BuildContext.bf does the same for BeefBuild / BeefIDE.
-            # /usr/bin/{clang++,c++} do not exist in the Nix sandbox.
-            substituteInPlace BeefBoot/BootApp.cpp \
-              --replace '/usr/bin/clang++' '${pkgs.stdenv.cc}/bin/c++' \
-              --replace '/usr/bin/c++'     '${pkgs.stdenv.cc}/bin/c++'
-
-            substituteInPlace IDE/src/BuildContext.bf \
-              --replace-quiet '/usr/bin/clang++' '${pkgs.stdenv.cc}/bin/c++' \
-              --replace-quiet '/usr/bin/c++'     '${pkgs.stdenv.cc}/bin/c++'
+            patchShebangs BeefySysLib/third_party/libffi || true
           '';
 
           buildPhase = ''
@@ -192,6 +169,16 @@
             # Beef tries to create ~/.config/beeflang/BeefManaged; the Nix
             # sandbox sets HOME=/homeless-shelter which is not writable.
             export HOME=$TMPDIR
+
+            # BeefBoot's DoLinkGNU scans $PATH for `c++` and keeps the LAST
+            # match, which would pick the unwrapped gcc over the cc-wrapper and
+            # lose the glibc -B flag (ld can't find crt1.o). Append a `c++`
+            # symlink to the cc-wrapper at the END of PATH so the scan resolves
+            # the wrapper. BuildContext.bf uses a first-match scan, which already
+            # resolves the wrapper, so this does not disturb it.
+            mkdir -p "$TMPDIR/beef-cxx"
+            ln -sfn ${pkgs.stdenv.cc}/bin/c++ "$TMPDIR/beef-cxx/c++"
+            export PATH="$PATH:$TMPDIR/beef-cxx"
 
             # 4. Bootstrap BeefBuild via BeefBoot.
             echo "Building BeefBuild_boot..."
@@ -295,6 +282,16 @@ if [ ! -f "\$VERSION_FILE" ] || [ "\$(cat "\$VERSION_FILE")" != "\$STORE_BIN" ];
     ln -sfn "\$BEEFLIBS" "\$USER_BEEF_DIR/BeefLibs"
     echo "\$STORE_BIN" > "\$VERSION_FILE"
 fi
+
+# SDL 3.4.x falls back to XWayland on COSMIC because cosmic-comp
+# currently does not advertise fifo-v1. BeefIDE's SDL popups have
+# significant UI lag through XWayland, while native Wayland works
+# correctly. Respect an explicit user override.
+if [ -z "''${SDL_VIDEO_DRIVER:-}" ] &&
+   [ "''${XDG_CURRENT_DESKTOP:-}" = "COSMIC" ]; then
+    export SDL_VIDEO_DRIVER=wayland
+fi
+
 exec "\$USER_BEEF_DIR/bin/BeefIDE" "\$@"
 LAUNCHER_SCRIPT
             chmod +x $share/bin/beef-ide-launcher
