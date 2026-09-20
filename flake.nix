@@ -12,15 +12,6 @@
       # url = "path:/path/to/the/forked/Beef";
       flake = false;
     };
-
-    # If you want to use this flake to build a fork of the Beef project
-    # comment the above `beef-src` and uncomment the one below.
-    # Replace the path by the actual path to your fork
-
-    #beef-src = {
-    #  
-    #  flake = false;
-    #};
   };
 
   outputs = { self, nixpkgs, flake-utils, beef-src }:
@@ -263,36 +254,50 @@
             # BeefIDE writes DefaultLayout.toml relative to its own binary
             # (/proc/self/exe resolves symlinks, so only the binary itself must
             # be a real copy in a user-writable dir; everything else symlinks).
-            cat > $share/bin/beef-ide-launcher << LAUNCHER_SCRIPT
+            
+            # Use Nix interpolation ${placeholder "out"} to inject the store path,
+            # and use a QUOTED heredoc delimiter 'LAUNCHER_SCRIPT' so bash does
+            # NOT expand $variables at build time. Runtime variables like
+            # ''${XDG_CURRENT_DESKTOP:-} survive literally into the file and are
+            # expanded when the launcher runs.
+            cat > $share/bin/beef-ide-launcher << 'LAUNCHER_SCRIPT'
 #!${pkgs.bash}/bin/bash
 set -euo pipefail
-STORE_BIN="$share/bin"
-BEEFLIBS="$share/BeefLibs"
-USER_BEEF_DIR="\''${XDG_DATA_HOME:-\$HOME/.local/share}/beef"
-VERSION_FILE="\$USER_BEEF_DIR/bin/.store-path"
-if [ ! -f "\$VERSION_FILE" ] || [ "\$(cat "\$VERSION_FILE")" != "\$STORE_BIN" ]; then
-    mkdir -p "\$USER_BEEF_DIR/bin"
-    cp "\$STORE_BIN/BeefIDE" "\$USER_BEEF_DIR/bin/BeefIDE"
-    chmod u+w "\$USER_BEEF_DIR/bin/BeefIDE"
-    for f in "\$STORE_BIN"/*; do
-        name="\$(basename "\$f")"
-        [ "\$name" = "BeefIDE" ] && continue
-        ln -sf "\$f" "\$USER_BEEF_DIR/bin/\$name"
+STORE_BIN="${placeholder "out"}/share/beef/bin"
+BEEFLIBS="${placeholder "out"}/share/beef/BeefLibs"
+USER_BEEF_DIR="''${XDG_DATA_HOME:-$HOME/.local/share}/beef"
+VERSION_FILE="$USER_BEEF_DIR/bin/.store-path"
+if [ ! -f "$VERSION_FILE" ] || [ "$(cat "$VERSION_FILE")" != "$STORE_BIN" ]; then
+    mkdir -p "$USER_BEEF_DIR/bin"
+    cp "$STORE_BIN/BeefIDE" "$USER_BEEF_DIR/bin/BeefIDE"
+    chmod u+w "$USER_BEEF_DIR/bin/BeefIDE"
+    for f in "$STORE_BIN"/*; do
+        name="$(basename "$f")"
+        [ "$name" = "BeefIDE" ] && continue
+        ln -sf "$f" "$USER_BEEF_DIR/bin/$name"
     done
-    ln -sfn "\$BEEFLIBS" "\$USER_BEEF_DIR/BeefLibs"
-    echo "\$STORE_BIN" > "\$VERSION_FILE"
+    ln -sfn "$BEEFLIBS" "$USER_BEEF_DIR/BeefLibs"
+    echo "$STORE_BIN" > "$VERSION_FILE"
 fi
 
 # SDL 3.4.x falls back to XWayland on COSMIC because cosmic-comp
 # currently does not advertise fifo-v1. BeefIDE's SDL popups have
 # significant UI lag through XWayland, while native Wayland works
-# correctly. Respect an explicit user override.
-if [ -z "''${SDL_VIDEO_DRIVER:-}" ] &&
-   [ "''${XDG_CURRENT_DESKTOP:-}" = "COSMIC" ]; then
-    export SDL_VIDEO_DRIVER=wayland
+# correctly.
+#
+# XDG_CURRENT_DESKTOP can be a colon-separated list (per the spec),
+# so use a case pattern instead of a string equality test.
+# Also check XDG_SESSION_DESKTOP as a fallback.
+# Respect an explicit user override of SDL_VIDEODRIVER.
+if [ -z "''${SDL_VIDEODRIVER:-}" ]; then
+    case ":''${XDG_CURRENT_DESKTOP:-}:''${XDG_SESSION_DESKTOP:-}:" in
+        *:[Cc][Oo][Ss][Mm][Ii][Cc]:*)
+            export SDL_VIDEODRIVER=wayland
+            ;;
+    esac
 fi
 
-exec "\$USER_BEEF_DIR/bin/BeefIDE" "\$@"
+exec "$USER_BEEF_DIR/bin/BeefIDE" "$@"
 LAUNCHER_SCRIPT
             chmod +x $share/bin/beef-ide-launcher
 
