@@ -6,7 +6,7 @@
     flake-utils.url = "github:numtide/flake-utils";
     
     beef-src = {
-      url = "github:beefytech/Beef/1cd7cf8687d86c447872c32fdf8c7a2ea7b699f1";
+      url = "github:beefytech/Beef/7e5c38a4374c1c16c065c60f795ca81eddb3d303";
       
       # Use an absolute path to your own fork of Beef if you want to use this flake to build it.
       # url = "path:/path/to/the/forked/Beef";
@@ -24,6 +24,7 @@
 
         ideRuntimeDeps = with pkgs; [
           sdl3
+          sdl3-ttf
           systemd
           curl
           freetype
@@ -66,6 +67,14 @@
           libxml2
           ncurses
         ];
+
+        # LLVM toolchain tools (clang++, ld.lld, llvm-ar) that Beef's IDE /
+        # BeefBuild resolve from PATH at link time when the LLVM toolset is
+        # selected. These are added to the wrapper PATH below (NOT to
+        # buildInputs): clang-wrapper is itself a cc-wrapper, and adding it to
+        # buildInputs disrupts the bootstrapped BeefBuild's rpath resolution of
+        # libLLVM.so during the build phase. Nix's reference scanner pulls them
+        # into the output closure via the wrapper script regardless.
 
         # Desktop entry for the app launcher. Upstream ships
         # IDE/Resources/BeefIDE.desktop but it targets the /opt/BeefLang
@@ -250,7 +259,12 @@
 
             libpath="${lib.makeLibraryPath ideRuntimeDeps}"
             makeWrapper $share/bin/BeefBuild $out/bin/BeefBuild \
-              --prefix LD_LIBRARY_PATH : "$libpath"
+              --prefix LD_LIBRARY_PATH : "$libpath" \
+              --prefix LIBRARY_PATH : "$libpath" \
+              --prefix PATH : "${llvmPkgs.clang}/bin" \
+              --prefix PATH : "${llvmPkgs.lld}/bin" \
+              --prefix PATH : "${llvmPkgs.llvm}/bin" \
+              --prefix PATH : "${pkgs.stdenv.cc}/bin"
             # BeefIDE writes DefaultLayout.toml relative to its own binary
             # (/proc/self/exe resolves symlinks, so only the binary itself must
             # be a real copy in a user-writable dir; everything else symlinks).
@@ -303,6 +317,11 @@ LAUNCHER_SCRIPT
 
             makeWrapper $share/bin/beef-ide-launcher $out/bin/BeefIDE \
               --prefix LD_LIBRARY_PATH : "$libpath" \
+              --prefix LIBRARY_PATH : "$libpath" \
+              --prefix PATH : "${llvmPkgs.clang}/bin" \
+              --prefix PATH : "${llvmPkgs.lld}/bin" \
+              --prefix PATH : "${llvmPkgs.llvm}/bin" \
+              --prefix PATH : "${pkgs.stdenv.cc}/bin" \
               --prefix PATH : "${pkgs.gdb}/bin" \
               --prefix PATH : "${llvmPkgs.lldb}/bin"
 
