@@ -20,6 +20,19 @@
         pkgs = import nixpkgs { inherit system; };
         lib = pkgs.lib;
 
+        # Wayland compositors where SDL must use its native Wayland driver rather
+        # than fall back to XWayland (which lags BeefIDE's SDL popups). Entries are
+        # matched case-insensitively against the colon-separated
+        # XDG_CURRENT_DESKTOP / XDG_SESSION_DESKTOP values, so keep them lowercase.
+        # To add a compositor, append its name here.
+        waylandOnlyCompositors = [ "cosmic" "umbriel" ];
+
+        # Bash `case` alternation matching whole colon-delimited tokens, e.g.
+        # `*:cosmic:* | *:umbriel:*`.
+        waylandCompositorPattern = lib.concatMapStringsSep " | "
+          (name: "*:${name}:*")
+          waylandOnlyCompositors;
+
         llvmPkgs = pkgs.llvmPackages_22 or pkgs.llvmPackages_latest;
 
         ideRuntimeDeps = with pkgs; [
@@ -294,18 +307,20 @@ if [ ! -f "$VERSION_FILE" ] || [ "$(cat "$VERSION_FILE")" != "$STORE_BIN" ]; the
     echo "$STORE_BIN" > "$VERSION_FILE"
 fi
 
-# SDL 3.4.x falls back to XWayland on COSMIC because cosmic-comp
-# currently does not advertise fifo-v1. BeefIDE's SDL popups have
-# significant UI lag through XWayland, while native Wayland works
-# correctly.
+# SDL 3.4.x falls back to XWayland on certain Wayland compositors because
+# they do not advertise fifo-v1. BeefIDE's SDL popups have significant UI
+# lag through XWayland, while native Wayland works correctly. The list of
+# affected compositors lives in `waylandOnlyCompositors` in the `let` block
+# above; add a compositor there to force Wayland for it too.
 #
-# XDG_CURRENT_DESKTOP can be a colon-separated list (per the spec),
-# so use a case pattern instead of a string equality test.
-# Also check XDG_SESSION_DESKTOP as a fallback.
+# XDG_CURRENT_DESKTOP can be a colon-separated list (per the spec), and
+# XDG_SESSION_DESKTOP is checked as a fallback. Matching is case-insensitive
+# (via bash lowercasing) and against whole colon-delimited tokens.
 # Respect an explicit user override of SDL_VIDEODRIVER.
 if [ -z "''${SDL_VIDEODRIVER:-}" ]; then
-    case ":''${XDG_CURRENT_DESKTOP:-}:''${XDG_SESSION_DESKTOP:-}:" in
-        *:[Cc][Oo][Ss][Mm][Ii][Cc]:*)
+    _beef_desktop=":''${XDG_CURRENT_DESKTOP:-}:''${XDG_SESSION_DESKTOP:-}:"
+    case "''${_beef_desktop,,}" in
+        ${waylandCompositorPattern})
             export SDL_VIDEODRIVER=wayland
             ;;
     esac
