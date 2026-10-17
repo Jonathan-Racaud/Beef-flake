@@ -301,7 +301,7 @@ if [ ! -f "$VERSION_FILE" ] || [ "$(cat "$VERSION_FILE")" != "$STORE_BIN" ]; the
     for f in "$STORE_BIN"/*; do
         name="$(basename "$f")"
         [ "$name" = "BeefIDE" ] && continue
-        ln -sf "$f" "$USER_BEEF_DIR/bin/$name"
+        ln -sfn "$f" "$USER_BEEF_DIR/bin/$name"
     done
     ln -sfn "$BEEFLIBS" "$USER_BEEF_DIR/BeefLibs"
     echo "$STORE_BIN" > "$VERSION_FILE"
