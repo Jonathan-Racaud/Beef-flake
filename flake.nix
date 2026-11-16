@@ -6,7 +6,7 @@
     flake-utils.url = "github:numtide/flake-utils";
     
     beef-src = {
-      url = "github:beefytech/Beef/370410dc0004f7f106c4a734806082c2934545ec";
+      url = "github:beefytech/Beef/ef932f48871ac21c1b4763c6220cb219b060256f";
       
       # Use an absolute path to your own fork of Beef if you want to use this flake to build it.
       # url = "path:/path/to/the/forked/Beef";

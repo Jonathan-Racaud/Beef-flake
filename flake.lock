@@ -3,17 +3,17 @@
     "beef-src": {
       "flake": false,
       "locked": {
-        "lastModified": 1793393330,
-        "narHash": "sha256-A3jAhliv6c2ikR9grJJOS+YRKbNnoc266t16Ga5FZHw=",
+        "lastModified": 1794396400,
+        "narHash": "sha256-h1ria+sdmD51rsw3sI6BD4eV29F/LnzNFMeApGdPN/c=",
         "owner": "beefytech",
         "repo": "Beef",
-        "rev": "370410dc0004f7f106c4a734806082c2934545ec",
+        "rev": "ef932f48871ac21c1b4763c6220cb219b060256f",
         "type": "github"
       },
       "original": {
         "owner": "beefytech",
         "repo": "Beef",
-        "rev": "370410dc0004f7f106c4a734806082c2934545ec",
+        "rev": "ef932f48871ac21c1b4763c6220cb219b060256f",
         "type": "github"
       }
     },
